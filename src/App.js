@@ -61,11 +61,22 @@ function App () {
     }
   }
 
+  const deletePost = async (id) => {
+    try {
+      await api.delete(`/${id}`);
+      console.log(`Post ${id} deleted`);
+      setTitle(prevTitle => prevTitle.filter(post => post.id !== id));
+    } catch(err) {
+      console.error('Error deleting post:', err);
+    }
+  }
+
   return (
     <div className="App">
       <button onClick={createPost}>Create Post</button>
       <button onClick={() => updatePost(1)}>Update Post 1</button>
       <button onClick={() => patchPost(1)}>Patch Post</button>
+      <button onClick={() => deletePost(1)}>Delete Post 1</button>
       <header className="App-header">
         {title.map(titles => <h2 key={titles.id}>{titles.title}</h2>)}
         <img src={logo} className="App-logo" alt="logo" />
