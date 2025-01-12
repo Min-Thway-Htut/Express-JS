@@ -3,95 +3,87 @@ import './App.css';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 
-
 const api = axios.create({
-  baseURL: `https://jsonplaceholder.typicode.com/posts`
-})
+  baseURL: 'https://jsonplaceholder.typicode.com/todos',
+});
 
 function App () {
 
-  const [title, setTitle] = useState([]);
+  const [todos, setTodos] = useState([]);
+  const [newTodo, setNewTodo] = useState('');
 
   useEffect(() => {
-    api.get('/').then(res => {
-      console.log(res.data);
-      setTitle(res.data)
-    }).catch(err => {
+    api.get('/')
+    .then((res) => {
+      setTodos(res.data);
+    })
+    .catch((err) => {
       console.error('Error fetching data:', err);
-    });
-  }, []);
+    })
+  },[]);
 
-  const createPost = async () => {
-    try {
-      const res = await api.post('/', {
-        title: 'New Post Title',
-        body: 'This is the body of the new post',
-        userId: 1
-      });
-      console.log(res.data);
-      setTitle(prevTitle => [...prevTitle, res.data]);
-    } catch (err) {
-      console.error('Error creating post:', err);
-    }
-  };
-
-  const updatePost = async (id) => {
-    try {
-      const res = await api.put(`/${id}`, {
-        title: 'Updated Title',
-        body: 'Updated body of the post',
-        userId: 1
-      });
-      console.log(res.data);
-      setTitle(prevTitle => prevTitle.map(post => post.id === id ? res.data : post)); 
-    }catch(err){
-      console.error('Error updating post:', err);
+  const addTodo = async () => {
+    const newTask = {
+      title: newTodo,
+      completed: false,
     };
-  };
 
-  const patchPost = async (id) => {
     try {
-      const res = await api.patch(`/${id}`, {
-        title: 'Patched Title'
-      });
-      console.log(res.data);
-      setTitle(prevTitle => prevTitle.map(post => post.id === id ? res.data : post));
-    } catch (err) {
-      console.error('Error patching post:', err);
+      const res = await api.post('/', newTask);
+      setTodos([...todos, res.data]);
+      setNewTodo('');
+    } catch (error) {
+      console.error('Error adding task:', error);
     }
   }
 
-  const deletePost = async (id) => {
+  const toggleComplete = async (id) => {
+    const updatedTodo = todos.find((todo) => todo.id === id);
+    updatedTodo.completed = !updatedTodo.completed;
+
+    try {
+      await api.put(`/${id}`, updatedTodo);
+      setTodos(todos.map((todo) => (todo.id === id ? updatedTodo : todo)));
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
+  const deleteTodo = async (id) => {
     try {
       await api.delete(`/${id}`);
-      console.log(`Post ${id} deleted`);
-      setTitle(prevTitle => prevTitle.filter(post => post.id !== id));
-    } catch(err) {
-      console.error('Error deleting post:', err);
+      setTodos(todos.filter((todo) => todo.id !== id));
+    } catch (error) {
+      console.error('Error deleting task:', error);
     }
-  }
+  };
 
   return (
+
     <div className="App">
-      <button onClick={createPost}>Create Post</button>
-      <button onClick={() => updatePost(1)}>Update Post 1</button>
-      <button onClick={() => patchPost(1)}>Patch Post</button>
-      <button onClick={() => deletePost(1)}>Delete Post 1</button>
-      <header className="App-header">
-        {title.map(titles => <h2 key={titles.id}>{titles.title}</h2>)}
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <h1>To-Do List</h1>
+      <input 
+      type='text'
+      value={newTodo}
+      onChange={(e) => setNewTodo(e.target.value)}
+      placeholder='Add a new task'
+      />
+      <button onClick={addTodo}>Add Task</button>
+
+      <ul>
+        {todos.map((todo) => (
+          <li key={todo.id}>
+            <span
+              style={{
+                textDecoration: todo.completed ? 'line-through' : 'none',
+              }}
+              onClick={() => toggleComplete(todo.id)}>
+                {todo.title}
+            </span>
+            <button onClick={() => deleteTodo(todo.id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
